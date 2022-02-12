@@ -3,20 +3,25 @@ import * as React from 'react';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import {Grid, List, ListItem, ListItemText, TextField} from "@mui/material";
+import {Grid, List, ListItem, ListItemText, Tab, Tabs, TextField} from "@mui/material";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import DatePicker from '@mui/lab/DatePicker';
-import {PickersDay, StaticDatePicker} from "@mui/lab";
+import {PickersDay, StaticDatePicker, TabContext, TabList, TabPanel} from "@mui/lab";
 import {de} from "date-fns/locale";
 import {subDays, addDays, isSameDay, isAfter, isBefore} from "date-fns";
 import Booking from "./Booking.js";
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+
 
 export default class Calendar extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
+      actionTab: "1",
       bookingName: null,
       month: "march",
       selectedDays: [],
@@ -31,12 +36,15 @@ export default class Calendar extends React.Component {
     this.handleInputBookingName = this.handleInputBookingName.bind(this);
     this.handleInputComment = this.handleInputComment.bind(this);
     this.renderBookings = this.renderBookings.bind(this);
+    this.onChangeActionTab = this.onChangeActionTab.bind(this);
   }
 
   convertSelected2Booked() {
-    let freshBooking = new Booking(this.state.arrivalDay,this.state.departureDay,this.state.bookingName,this.state.comment)
-    this.setState({arrivalDay: null, departureDay: null, bookingName: null, comment: null,
-      bookedDays: [...this.state.bookedDays,freshBooking]})
+    let freshBooking = new Booking(this.state.arrivalDay, this.state.departureDay, this.state.bookingName, this.state.comment)
+    this.setState({
+      arrivalDay: null, departureDay: null, bookingName: null, comment: null,
+      bookedDays: [...this.state.bookedDays, freshBooking]
+    })
   }
 
   //the way to go when grabbing some value from another element
@@ -48,6 +56,11 @@ export default class Calendar extends React.Component {
     this.setState({comment: event.target.value})
   }
 
+  onChangeActionTab(index) {
+    this.setState({actionTab: index});
+    console.warn("actionTab: " + index);
+  }
+
   getMaxDepartureDate() {
     let maxDate = this.state.bookedDays.map(({begin}) => {
       return begin
@@ -57,8 +70,122 @@ export default class Calendar extends React.Component {
       return maxDate
     return new Date(new Date().getFullYear(), 11, 31);
   }
+
   getTitle(day) {
     return this.state.bookedDays.find((item) => item.containsDay(day)).name
+  }
+
+
+
+  renderStaticDatePicker(month) {
+    return (
+      <StaticDatePicker
+        showToolbar={false}
+        value={null}
+        defaultCalendarMonth={new Date(2022, month, 1)}
+        views={['day']}
+        componentsProps={{
+          leftArrowButton: {"style": {"visibility": "hidden"}},
+          rightArrowButton: {"style": {"visibility": "hidden"}},
+          switchViewButton: {"style": {"visibility": "hidden"}}
+        }}
+        renderDay={(day, _value, DayComponentProps) =>
+          this.renderBookings(day, _value, DayComponentProps)}
+      />
+    )
+  }
+
+  //*************************************************************************************RENDER
+  render() {
+    return (
+      <Box sx={{padding: 5}}>
+        <LocalizationProvider dateAdapter={AdapterDateFns} locale={de}>
+          <Grid container spacing={2}>
+            <Grid item sx={5}>
+              <Paper elevation={1} sx={{padding: 5, width: 400, opacity: .85}}>
+                <TabContext value={this.state.actionTab} >
+                  <Box sx={{borderBottom: 1, borderColor: 'divider' }}>
+                    <TabList variant="fullWidth"
+                             onChange={(event, value) => this.onChangeActionTab(value)}>
+                      <Tab icon={<AddIcon />} value="1"/>
+                      <Tab icon={<EditIcon />} value="2"/>
+                      <Tab icon={<DeleteForeverIcon />} value="3"/>
+                    </TabList>
+                  </Box>
+                  <TabPanel value="1">
+                    Willst Du eine Reise buchen?
+                    <br/>
+                    <TextField id="outlined-basic" label="Buchungsname" variant="outlined" sx={{marginTop: 3, height: 45}}
+                               onChange={event => this.handleInputBookingName(event)}/>
+                    <br/><br/>
+                    <DatePicker
+                      label="Anreise"
+                      renderInput={(params) => <TextField {...params} helperText={this.state.helperArrival}/>}
+                      value={this.state.arrivalDay}
+                      minDate={new Date(new Date().getFullYear(), 0, 1)}
+                      maxDate={new Date(new Date().getFullYear(), 11, 31)}
+                      onChange={(value) => {
+                        this.setState({arrivalDay: value, departureDay: null})
+                      }}
+                      renderDay={(day, _value, DayComponentProps) =>
+                        this.renderBookings(day, _value, DayComponentProps)}
+                    />
+                    <br/><br/>
+                    <DatePicker
+                      label="Abreise"
+                      renderInput={(params) => <TextField {...params} />}
+                      value={this.state.departureDay}
+                      minDate={addDays(this.state.arrivalDay, 1)}
+                      maxDate={this.getMaxDepartureDate()}
+                      onChange={(value) => {
+                        this.setState({departureDay: value})
+                      }}
+                      renderDay={(day, _value, DayComponentProps) =>
+                        this.renderBookings(day, _value, DayComponentProps)}
+                    />
+                    <TextField id="outlined-basic" label="Kommentar" variant="outlined" sx={{marginTop: 2, height: 45}}
+                               onChange={event => this.handleInputComment(event)}/>
+                    <br/><br/><br/>
+                    <Button variant="outlined" sx={{fontSize: 20}} onClick={this.convertSelected2Booked}>Mach Fertig.</Button>
+                  </TabPanel>
+                  <TabPanel value="2">
+                    Buchungen bearbeiten
+                  </TabPanel>
+                  <TabPanel value="3">
+                    Buchungen löschen
+                  </TabPanel>
+                </TabContext>
+              </Paper>
+
+
+              <Paper elevation={1} sx={{marginTop: 3, padding: 5, width: 400, opacity: .85}}>
+                <h3>Buchungsliste</h3>
+                <br/>
+                <List>
+                  {this.state.bookedDays.map((item) =>
+                    <ListItem>
+                      <ListItemText
+                        primary={"Buchungsname: " + item.name + " | von: " + item.begin.toLocaleDateString("de-DE") + " bis " + item.end.toLocaleDateString("de-DE") + " | Kommentar: " + item.comment}
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </Paper>
+            </Grid>
+            <Grid item sx={2}>
+                {this.renderStaticDatePicker(0)}
+            </Grid>
+            <Grid item sx={2}>
+                {this.renderStaticDatePicker(1)}
+            </Grid>
+            <Grid item sx={2}>
+                {this.renderStaticDatePicker(2)}
+            </Grid>
+          </Grid>
+        </LocalizationProvider>
+      </Box>
+    )
+      ;
   }
   renderBookings(day, _value, DayComponentProps) {
 
@@ -106,102 +233,6 @@ export default class Calendar extends React.Component {
       return <PickersDay {...DayComponentProps} disableMargin={true} className="selectedDay_reg selectedDay"/>
     }
     return <PickersDay {...DayComponentProps} />
-  }
-
-  renderStaticDatePicker(month) {
-    return (
-      <StaticDatePicker
-        showToolbar={false}
-        value={null}
-        defaultCalendarMonth={new Date(2022, month, 1)}
-        views={['day']}
-        componentsProps={{
-          leftArrowButton: {"style": {"visibility": "hidden"}},
-          rightArrowButton: {"style": {"visibility": "hidden"}},
-          switchViewButton: {"style": {"visibility": "hidden"}}
-        }}
-        renderDay={(day, _value, DayComponentProps) =>
-          this.renderBookings(day, _value, DayComponentProps)}
-      />
-    )
-  }
-
-  //*************************************************************************************RENDER
-  render() {
-    return (
-      <Box sx={{padding: 5}}>
-        <LocalizationProvider dateAdapter={AdapterDateFns} locale={de}>
-          <Grid container spacing={2}>
-            <Grid item sx={5}>
-              <Paper elevation={1} sx={{padding: 5, width: 400, opacity: .85}}>
-                Willst Du eine Reise buchen?
-                <br/>
-                <TextField id="outlined-basic" label="Buchungsname" variant="outlined" sx={{marginTop: 3, height: 45}}
-                           onChange={event => this.handleInputBookingName(event)}/>
-                <br/><br/>
-                <DatePicker
-                  label="Anreise"
-                  renderInput={(params) => <TextField {...params} helperText={this.state.helperArrival}/>}
-                  value={this.state.arrivalDay}
-                  minDate={new Date(new Date().getFullYear(), 0, 1)}
-                  maxDate={new Date(new Date().getFullYear(), 11, 31)}
-                  onChange={(value) => {
-                    this.setState({arrivalDay: value, departureDay: null})
-                  }}
-                  renderDay={(day, _value, DayComponentProps) =>
-                    this.renderBookings(day, _value, DayComponentProps)}
-                />
-                <br/><br/>
-                <DatePicker
-                  label="Abreise"
-                  renderInput={(params) => <TextField {...params} />}
-                  value={this.state.departureDay}
-                  minDate={addDays(this.state.arrivalDay, 1)}
-                  maxDate={this.getMaxDepartureDate()}
-                  onChange={(value) => {
-                    this.setState({departureDay: value})
-                  }}
-                  renderDay={(day, _value, DayComponentProps) =>
-                    this.renderBookings(day, _value, DayComponentProps)}
-                />
-                <TextField id="outlined-basic" label="Kommentar" variant="outlined" sx={{marginTop: 2, height: 45}}
-                           onChange={event => this.handleInputComment(event)}/>
-                <br/><br/><br/>
-                <Button variant="outlined" sx={{fontSize: 20}} onClick={this.convertSelected2Booked}>Mach Fertig.</Button>
-              </Paper>
-              <Paper elevation={1} sx={{marginTop: 3, padding: 5, width: 400, opacity: .85}}>
-                <h3>Buchungsliste</h3>
-                <br/>
-                <List>
-                  {this.state.bookedDays.map((item) =>
-                    <ListItem>
-                      <ListItemText
-                        primary={"Buchungsname: " + item.name + " | von: " + item.begin.toLocaleDateString("de-DE") + " bis " + item.end.toLocaleDateString("de-DE") + " | Kommentar: " + item.comment}
-                      />
-                    </ListItem>
-                  )}
-                </List>
-              </Paper>
-            </Grid>
-            <Grid item sx={2}>
-              <Paper elevation={1}>
-                {this.renderStaticDatePicker(0)}
-              </Paper>
-            </Grid>
-            <Grid item sx={2}>
-              <Paper elevation={1}>
-                {this.renderStaticDatePicker(1)}
-              </Paper>
-            </Grid>
-            <Grid item sx={2}>
-              <Paper elevation={1}>
-                {this.renderStaticDatePicker(2)}
-              </Paper>
-            </Grid>
-          </Grid>
-        </LocalizationProvider>
-      </Box>
-    );
   }
 
   //currently not needed anymore
