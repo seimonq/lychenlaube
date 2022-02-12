@@ -1,0 +1,83 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.Mui-disabled {
+  /*  background-color:blue !important;
+    color: white !important;
+    border-radius: 20% !important; */
+}
+.selectedDay, .Mui-selected {
+  background-color:white !important;
+  color: black !important;
+  border-radius: 0% !important;
+  margin-right: 1px !important;
+}
+.Mui-selected:hover {
+  background-color: gray !important;
+}
+.selectedDay_reg {
+  background-color: rgb(19, 205, 238,1) !important;
+}
+.selectedDay_begin {
+  background-image: linear-gradient(135deg, rgb(19, 205, 238,0) 40%, rgb(19, 205, 238,1));
+}
+.selectedDay_end {
+  background-image: linear-gradient(135deg, rgb(19, 205, 238,1),rgb(19, 205, 238,0) 60%);
+}
+.selected_booked_cross {
+  background-image: linear-gradient(135deg, rgb(19, 205, 238,1),rgb(19, 205, 238,0) 50%, rgb(13, 135, 13,0) 50%,rgb(13, 135, 13,1));
+}
+.booked_selected_cross {
+  background-image: linear-gradient(135deg, rgb(13, 135, 13,1),rgb(13, 135, 13,0) 50%, rgb(19, 205, 238,0) 50%,rgb(19, 205, 238,1));
+}
+.bookedDay_reg {
+   background-color: rgb(13, 135, 13,1) !important;
+}
+.bookedDay_double {
+  background-image: linear-gradient(135deg, rgb(13, 135, 13,1),rgb(13, 135, 13,0) 50%, rgb(13, 135, 13,0) 50%, rgb(13, 135, 13,1));
+}
+.bookedDay_begin {
+  background-image: linear-gradient(135deg, rgb(13, 135, 13,0) 30%,rgb(13, 135, 13,1));
+}
+.bookedDay_end {
+  background-image: linear-gradient(135deg, rgb(13, 135, 13,1),rgb(13, 135, 13,0) 60%);
+}
+.bookedDay {
+  margin-right: 1px !important;
+  border-radius: 10% !important;
+}
