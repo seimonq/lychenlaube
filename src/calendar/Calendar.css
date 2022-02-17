@@ -50,6 +50,9 @@
 .Mui-selected:hover {
   background-color: gray !important;
 }
+.Mui-disabled {
+  pointer-events: auto !important;
+}
 .selectedDay_reg {
   background-color: rgb(19, 205, 238,1) !important;
 }

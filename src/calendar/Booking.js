@@ -13,4 +13,10 @@ export default class Booking {
     isInnerDay(day) {
         return isAfter(day,this.begin) && isBefore(day,this.end)
     }
+    getBegin() {
+        return this.begin;
+    }
+    getEnd() {
+        return this.end;
+    }
 }

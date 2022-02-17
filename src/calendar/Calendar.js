@@ -14,7 +14,7 @@ import Booking from "./Booking.js";
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-
+import RenderDayUtil from "./RenderDayUtil";
 
 export default class Calendar extends React.Component {
 
@@ -35,7 +35,6 @@ export default class Calendar extends React.Component {
     this.convertSelected2Booked = this.convertSelected2Booked.bind(this);
     this.handleInputBookingName = this.handleInputBookingName.bind(this);
     this.handleInputComment = this.handleInputComment.bind(this);
-    this.renderBookings = this.renderBookings.bind(this);
     this.onChangeActionTab = this.onChangeActionTab.bind(this);
   }
 
@@ -71,12 +70,6 @@ export default class Calendar extends React.Component {
     return new Date(new Date().getFullYear(), 11, 31);
   }
 
-  getTitle(day) {
-    return this.state.bookedDays.find((item) => item.containsDay(day)).name
-  }
-
-
-
   renderStaticDatePicker(month) {
     return (
       <StaticDatePicker
@@ -90,7 +83,7 @@ export default class Calendar extends React.Component {
           switchViewButton: {"style": {"visibility": "hidden"}}
         }}
         renderDay={(day, _value, DayComponentProps) =>
-          this.renderBookings(day, _value, DayComponentProps)}
+          RenderDayUtil.render(day, DayComponentProps,this.state.bookedDays,this.state.arrivalDay,this.state.departureDay)}
       />
     )
   }
@@ -128,7 +121,7 @@ export default class Calendar extends React.Component {
                         this.setState({arrivalDay: value, departureDay: null})
                       }}
                       renderDay={(day, _value, DayComponentProps) =>
-                        this.renderBookings(day, _value, DayComponentProps)}
+                        RenderDayUtil.render(day, DayComponentProps,this.state.bookedDays,this.state.arrivalDay,this.state.departureDay)}
                     />
                     <br/><br/>
                     <DatePicker
@@ -141,7 +134,7 @@ export default class Calendar extends React.Component {
                         this.setState({departureDay: value})
                       }}
                       renderDay={(day, _value, DayComponentProps) =>
-                        this.renderBookings(day, _value, DayComponentProps)}
+                        RenderDayUtil.render(day, DayComponentProps,this.state.bookedDays,this.state.arrivalDay,this.state.departureDay)}
                     />
                     <TextField id="outlined-basic" label="Kommentar" variant="outlined" sx={{marginTop: 2, height: 45}}
                                onChange={event => this.handleInputComment(event)}/>
@@ -186,68 +179,5 @@ export default class Calendar extends React.Component {
       </Box>
     )
       ;
-  }
-  renderBookings(day, _value, DayComponentProps) {
-
-    let beginDayList = this.state.bookedDays.map(({begin}) => {
-      return begin
-    })
-    let endDayList = this.state.bookedDays.map(({end}) => {
-      return end
-    })
-
-    //overlapping days
-    if (beginDayList.find((item) => isSameDay(item, day)) &&
-      (this.state.departureDay != null && isSameDay(this.state.departureDay, day) ||
-        this.state.arrivalDay != null && isSameDay(this.state.arrivalDay, day))) {
-      return <PickersDay {...DayComponentProps} selected={true} disableMargin={true} className="selected_booked_cross"/>
-    }
-    if (endDayList.find((item) => isSameDay(item, day)) &&
-      this.state.arrivalDay != null && isSameDay(this.state.arrivalDay, day)) {
-      return <PickersDay {...DayComponentProps} selected={true} disableMargin={true} className="booked_selected_cross"/>
-    }
-    if (beginDayList.find((item) => isSameDay(item, day)) && endDayList.find((item) => isSameDay(item, day))) {
-      return <PickersDay {...DayComponentProps} disabled={true} disableMargin={true} className="bookedDay_double bookedDay"/>
-    }
-
-    //render booked days
-
-    if (beginDayList.find((item) => isSameDay(item, day))) {
-      return <PickersDay {...DayComponentProps} title={this.getTitle(day)} disabled={false} disableMargin={true} className="bookedDay_begin bookedDay"/>
-    }
-    if (endDayList.find((item) => isSameDay(item, day))) {
-      return <PickersDay {...DayComponentProps} title={this.getTitle(day)} disabled={false} disableMargin={true} className="bookedDay_end bookedDay"/>
-    }
-    if (this.state.bookedDays.find((item) => item.isInnerDay(day))) {
-      return <PickersDay {...DayComponentProps} title={this.getTitle(day)} disabled={true} disableMargin={true} className="bookedDay_reg bookedDay"/>
-    }
-    //render selected days
-    if (this.state.arrivalDay != null && isSameDay(this.state.arrivalDay, day)) {
-      return <PickersDay {...DayComponentProps} disableMargin={true} className="selectedDay_begin selectedDay"/>
-    }
-    if (this.state.departureDay != null && isSameDay(this.state.departureDay, day)) {
-      return <PickersDay {...DayComponentProps} disableMargin={true} className="selectedDay_end selectedDay"/>
-    }
-    if (this.state.arrivalDay != null && this.state.departureDay != null &&
-      isAfter(day, this.state.arrivalDay) && isBefore(day, this.state.departureDay)) {
-      return <PickersDay {...DayComponentProps} disableMargin={true} className="selectedDay_reg selectedDay"/>
-    }
-    return <PickersDay {...DayComponentProps} />
-  }
-
-  //currently not needed anymore
-  range(start, end) {
-    let range = []
-    if (!isAfter(end, start)) {
-      return range
-    }
-
-    var i = 0
-    do {
-      console.warn("i: " + i)
-      range.push(addDays(start, i))
-      i++
-    } while (!isSameDay(addDays(start, i - 1), end))
-    return range
   }
 }
