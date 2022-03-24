@@ -1,10 +1,10 @@
-import {addDays, isAfter, isBefore, isSameDay} from "date-fns";
+import {addDays, addMonths, isAfter, isBefore, isSameDay} from "date-fns";
 import {PickersDay} from "@mui/lab";
 import * as React from "react";
 
-export default class RenderDayUtil {
+export default class CalendarUtil {
 
-  static render(day, DayComponentProps,bookedDays,arrivalDay,departureDay) {
+  static renderDay(day, DayComponentProps, bookedDays, arrivalDay, departureDay) {
 
     let beginDayList = bookedDays.map(({begin}) => {
       return begin
@@ -18,8 +18,8 @@ export default class RenderDayUtil {
     if(bookingsOfDay != null) {
       for(let b in bookingsOfDay)   {
         title += bookingsOfDay[b].name + " hat gebucht vom "+
-          bookingsOfDay[b].getBegin().getDate() +"."+bookingsOfDay[b].getBegin().getMonth()+
-          " bis zum "+bookingsOfDay[b].getEnd().getDate() +"."+bookingsOfDay[b].getEnd().getMonth() +"    ";
+          bookingsOfDay[b].begin.getDate() +"."+bookingsOfDay[b].begin.getMonth()+
+          " bis zum "+bookingsOfDay[b].end.getDate() +"."+bookingsOfDay[b].end.getMonth() +"    ";
       }
     }
 
@@ -62,6 +62,10 @@ export default class RenderDayUtil {
       return <PickersDay {...DayComponentProps} disableMargin={true} className="selectedDay_reg selectedDay"/>
     }
     return <PickersDay {...DayComponentProps} />
+  }
+
+  static offsetDate(offset) {
+    return addMonths(new Date(),offset)
   }
 
   //currently not needed anymore

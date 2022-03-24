@@ -1,14 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import MyAppBar from './MyAppBar.js'
+import Navigation from './Navigation.js'
 import reportWebVitals from './reportWebVitals';
-import Calendar from "./calendar/Calendar";
 
 ReactDOM.render(
 <React.StrictMode>
-    <MyAppBar />
-    <Calendar />
+    <Navigation />
   </React.StrictMode>,
   document.getElementById('root')
 );

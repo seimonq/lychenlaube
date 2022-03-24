@@ -1,81 +1,62 @@
-import './Calendar.css';
 import * as React from 'react';
-import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import {Grid, List, ListItem, ListItemText, Tab, Tabs, TextField} from "@mui/material";
+import {Accordion, AccordionDetails, AccordionSummary, Alert, Container, Grid, List, ListItem, ListItemText, Stack} from "@mui/material";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
-import DatePicker from '@mui/lab/DatePicker';
-import {PickersDay, StaticDatePicker, TabContext, TabList, TabPanel} from "@mui/lab";
+import {LoadingButton, StaticDatePicker} from "@mui/lab";
 import {de} from "date-fns/locale";
-import {subDays, addDays, isSameDay, isAfter, isBefore} from "date-fns";
 import Booking from "./Booking.js";
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import RenderDayUtil from "./RenderDayUtil";
+
+import CalendarUtil from "./CalendarUtil";
+import BookingForm from "./BookingForm";
+import BookingManager from "./BookingManager";
+import './Calendar.css';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export default class Calendar extends React.Component {
 
   constructor(props) {
     super(props);
+    this.testAccount = "Simsa";
     this.state = {
-      actionTab: "1",
-      bookingName: null,
-      month: "march",
-      selectedDays: [],
-      bookedDays: [new Booking(new Date(2022, 1, 3), new Date(2022, 1, 6), "Peter", "lol"),
-        new Booking(new Date(2022, 1, 17), new Date(2022, 1, 21), "Udo", "lol2")],
-      arrivalDay: null,
-      helperArrival: "",
-      departureDay: null,
-      comment: null
+      bookingManager: new BookingManager([new Booking("Peter", new Date(2022, 1, 3), new Date(2022, 1, 6), "Peter", "lol"),
+        new Booking("Udo", new Date(2022, 1, 17), new Date(2022, 1, 21), "Udo", "lol2")]),
+      month2render: [0, 2, 4,6],
+      calendarLoading: false
     };
-    this.convertSelected2Booked = this.convertSelected2Booked.bind(this);
-    this.handleInputBookingName = this.handleInputBookingName.bind(this);
-    this.handleInputComment = this.handleInputComment.bind(this);
-    this.onChangeActionTab = this.onChangeActionTab.bind(this);
+    this.moveMonths = this.moveMonths.bind(this);
   }
 
-  convertSelected2Booked() {
-    let freshBooking = new Booking(this.state.arrivalDay, this.state.departureDay, this.state.bookingName, this.state.comment)
-    this.setState({
-      arrivalDay: null, departureDay: null, bookingName: null, comment: null,
-      bookedDays: [...this.state.bookedDays, freshBooking]
+  moveMonths(dist) {
+    let shifted = this.state.month2render.map((value) => {
+      return (value + dist)
     })
+    this.setState({calendarLoading: true})
+    //needs to go into new thread otherwise react will somehow batch DOM rendering and the calendarLoading won't be rendered individually
+    setTimeout(() => {
+      this.setState({month2render: shifted, calendarLoading: false})
+    }, 1)
   }
 
-  //the way to go when grabbing some value from another element
-  handleInputBookingName(event) {
-    this.setState({bookingName: event.target.value})
-  }
-
-  handleInputComment(event) {
-    this.setState({comment: event.target.value})
-  }
-
-  onChangeActionTab(index) {
-    this.setState({actionTab: index});
-    console.warn("actionTab: " + index);
-  }
-
-  getMaxDepartureDate() {
-    let maxDate = this.state.bookedDays.map(({begin}) => {
-      return begin
-    }).find((item) => isAfter(item, this.state.arrivalDay) || isSameDay(item, this.state.arrivalDay))
-    console.warn("maxDate: " + maxDate)
-    if (typeof maxDate !== 'undefined')
-      return maxDate
-    return new Date(new Date().getFullYear(), 11, 31);
-  }
-
-  renderStaticDatePicker(month) {
+  renderStaticDatePicker(year, month) {
+    let defaultDate = new Date(year, month, 1)
     return (
+      /*  workaround to resize staticdatepicker, see unsolved issue.. https://github.com/mui/material-ui/issues/27700
+          <Box sx={{
+
+              "& > div": {
+                minWidth: 256
+              },
+              "& > div > div, & > div > div > div, & .MuiCalendarPicker-root": {
+                width: 256
+              }
+            }}>*/
+
       <StaticDatePicker
         showToolbar={false}
-        value={null}
-        defaultCalendarMonth={new Date(2022, month, 1)}
+        loading={this.state.calendarLoading}
+        value={defaultDate}
         views={['day']}
         componentsProps={{
           leftArrowButton: {"style": {"visibility": "hidden"}},
@@ -83,8 +64,9 @@ export default class Calendar extends React.Component {
           switchViewButton: {"style": {"visibility": "hidden"}}
         }}
         renderDay={(day, _value, DayComponentProps) =>
-          RenderDayUtil.render(day, DayComponentProps,this.state.bookedDays,this.state.arrivalDay,this.state.departureDay)}
+          CalendarUtil.renderDay(day, DayComponentProps, this.state.bookingManager.getVisibleBookings(), this.state.arrivalDay, this.state.departureDay)}
       />
+      /*</Box>*/
     )
   }
 
@@ -93,69 +75,47 @@ export default class Calendar extends React.Component {
     return (
       <Box sx={{padding: 5}}>
         <LocalizationProvider dateAdapter={AdapterDateFns} locale={de}>
-          <Grid container spacing={2}>
-            <Grid item sx={5}>
-              <Paper elevation={1} sx={{padding: 5, width: 400, opacity: .85}}>
-                <TabContext value={this.state.actionTab} >
-                  <Box sx={{borderBottom: 1, borderColor: 'divider' }}>
-                    <TabList variant="fullWidth"
-                             onChange={(event, value) => this.onChangeActionTab(value)}>
-                      <Tab icon={<AddIcon />} value="1"/>
-                      <Tab icon={<EditIcon />} value="2"/>
-                      <Tab icon={<DeleteForeverIcon />} value="3"/>
-                    </TabList>
-                  </Box>
-                  <TabPanel value="1">
-                    Willst Du eine Reise buchen?
-                    <br/>
-                    <TextField id="outlined-basic" label="Buchungsname" variant="outlined" sx={{marginTop: 3, height: 45}}
-                               onChange={event => this.handleInputBookingName(event)}/>
-                    <br/><br/>
-                    <DatePicker
-                      label="Anreise"
-                      renderInput={(params) => <TextField {...params} helperText={this.state.helperArrival}/>}
-                      value={this.state.arrivalDay}
-                      minDate={new Date(new Date().getFullYear(), 0, 1)}
-                      maxDate={new Date(new Date().getFullYear(), 11, 31)}
-                      onChange={(value) => {
-                        this.setState({arrivalDay: value, departureDay: null})
-                      }}
-                      renderDay={(day, _value, DayComponentProps) =>
-                        RenderDayUtil.render(day, DayComponentProps,this.state.bookedDays,this.state.arrivalDay,this.state.departureDay)}
-                    />
-                    <br/><br/>
-                    <DatePicker
-                      label="Abreise"
-                      renderInput={(params) => <TextField {...params} />}
-                      value={this.state.departureDay}
-                      minDate={addDays(this.state.arrivalDay, 1)}
-                      maxDate={this.getMaxDepartureDate()}
-                      onChange={(value) => {
-                        this.setState({departureDay: value})
-                      }}
-                      renderDay={(day, _value, DayComponentProps) =>
-                        RenderDayUtil.render(day, DayComponentProps,this.state.bookedDays,this.state.arrivalDay,this.state.departureDay)}
-                    />
-                    <TextField id="outlined-basic" label="Kommentar" variant="outlined" sx={{marginTop: 2, height: 45}}
-                               onChange={event => this.handleInputComment(event)}/>
-                    <br/><br/><br/>
-                    <Button variant="outlined" sx={{fontSize: 20}} onClick={this.convertSelected2Booked}>Mach Fertig.</Button>
-                  </TabPanel>
-                  <TabPanel value="2">
-                    Buchungen bearbeiten
-                  </TabPanel>
-                  <TabPanel value="3">
-                    Buchungen löschen
-                  </TabPanel>
-                </TabContext>
-              </Paper>
+          <BookingForm bookingManager={this.state.bookingManager} refreshParentState={() => this.forceUpdate()}/>
 
-
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+              Kalendersicht
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack direction="row" spacing={2} justifyContent="center" sx={{marginTop: 2}}>
+                <LoadingButton variant="contained"
+                               loading={this.state.calendarLoading}
+                               loadingIndicator="Loading..."
+                               onClick={() => this.moveMonths(-2)}> zurück </LoadingButton>
+                <Stack direction="row" spacing={1}>
+                  {this.state.month2render.map((i) =>
+                    <Container disableGutters={true}>
+                      <Paper sx={{marginBottom: 1}}>
+                        {this.renderStaticDatePicker(CalendarUtil.offsetDate(i).getFullYear(), CalendarUtil.offsetDate(i).getMonth())}
+                      </Paper>
+                      <Paper>
+                        {this.renderStaticDatePicker(CalendarUtil.offsetDate(i + 1).getFullYear(), CalendarUtil.offsetDate(i + 1).getMonth())}
+                      </Paper>
+                    </Container>
+                  )}
+                </Stack>
+                <LoadingButton variant="contained"
+                               loading={this.state.calendarLoading}
+                               loadingIndicator="Loading..."
+                               onClick={() => this.moveMonths(2)}> weiter </LoadingButton>
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+              Listensicht
+            </AccordionSummary>
+            <AccordionDetails>
               <Paper elevation={1} sx={{marginTop: 3, padding: 5, width: 400, opacity: .85}}>
                 <h3>Buchungsliste</h3>
                 <br/>
                 <List>
-                  {this.state.bookedDays.map((item) =>
+                  {this.state.bookingManager.bookings.map((item) =>
                     <ListItem>
                       <ListItemText
                         primary={"Buchungsname: " + item.name + " | von: " + item.begin.toLocaleDateString("de-DE") + " bis " + item.end.toLocaleDateString("de-DE") + " | Kommentar: " + item.comment}
@@ -164,20 +124,11 @@ export default class Calendar extends React.Component {
                   )}
                 </List>
               </Paper>
-            </Grid>
-            <Grid item sx={2}>
-                {this.renderStaticDatePicker(0)}
-            </Grid>
-            <Grid item sx={2}>
-                {this.renderStaticDatePicker(1)}
-            </Grid>
-            <Grid item sx={2}>
-                {this.renderStaticDatePicker(2)}
-            </Grid>
-          </Grid>
+            </AccordionDetails>
+          </Accordion>
         </LocalizationProvider>
       </Box>
     )
-      ;
   }
+
 }

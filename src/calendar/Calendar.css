@@ -41,6 +41,18 @@
     color: white !important;
     border-radius: 20% !important; */
 }
+.MuiLoadingButton-loading {
+  opacity: 0.8 !important;
+  background-color: #1976d2 !important;
+}
+.MuiAccordion-root {
+  background-color: white !important;
+  opacity: .95 !important;
+}
+
+.myStaticDatePicker {
+  background-color: green !important;
+}
 .selectedDay, .Mui-selected {
   background-color:white !important;
   color: black !important;
