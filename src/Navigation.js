@@ -7,13 +7,12 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import * as React from "react";
 import MenuItem from "@mui/material/MenuItem";
-import CloseIcon from '@mui/icons-material/Close';
-import {Dialog, Menu, TextField} from "@mui/material";
+import {Menu} from "@mui/material";
 import Calendar from "./calendar/Calendar";
 import Paper from "@mui/material/Paper";
 import UserForm from "./user/UserForm";
-import Role from "./user/Role";
-import User from "./user/User";
+import {API_TEST_ENDPOINT, AUTH_ENDPOINT} from "./constants";
+import UserUtil from "./user/UserUtil";
 
 export default class Navigation extends React.Component {
   constructor(props) {
@@ -22,55 +21,31 @@ export default class Navigation extends React.Component {
       menuOpen: false,
       anchorEl: null,
       currentPage: null,
-      //keep me logged in for testing
-      user: null,
-      //user: new User("Simon", "simon@kern.de", Role.ADMIN, true, null),
-      showLoginForm: false,
-      tfUser: null,
-      tfPassword: null
+      user: this.checkUserAfterReload(),
+      testApiFetch: null
     }
     this.openMenu = this.openMenu.bind(this);
     this.closeMenu = this.closeMenu.bind(this);
     this.menuClick = this.menuClick.bind(this);
     this.transformUser = this.transformUser.bind(this);
-    this.handleTfUser = this.handleTfUser.bind(this);
-    this.handleTfPassword = this.handleTfPassword.bind(this);
-    this.checkLogin = this.checkLogin.bind(this);
-
+    this.fetchFromTestApi = this.fetchFromTestApi.bind(this);
   }
 
-  isAuthorized(user, leastRole) {
-    if (user != null && user.role != null) {
-      switch (leastRole) {
-        case Role.ADMIN:
-          if (user.role === Role.ADMIN) return true
-        case Role.FAMILY:
-          if (user.role === Role.FAMILY || user.role === Role.FRIEND) return true
-        case Role.FRIEND:
-          return true
-        default:
-          return false
+  checkUserAfterReload() {
+
+    var idToken = sessionStorage.getItem("user-tok") !== null ? sessionStorage.getItem("user-tok"):null;
+
+    // Get the ID token from the URL search params
+    if( idToken === null && window.location.hash !== '') {
+      const urlParams = new URLSearchParams(window.location.hash.substring(1));
+      idToken = urlParams.get('id_token');
+      if(idToken !== '') {
+        sessionStorage.setItem('user-tok',idToken);
       }
+      window.location.hash = '';
     }
-    return false
+    return (idToken !== null)
   }
-
-  handleTfUser(e) {
-    this.setState({"tfUser" : e.target.value})
-  }
-  handleTfPassword(e) {
-    this.setState({"tfPassword" : e.target.value})
-  }
-
-
-  checkLogin() {
-    if (this.state.tfUser != null && this.state.tfPassword != null) {
-      this.setState({user: new User("Simon", "simon@kern.de", Role.ADMIN, true, null)})
-      console.warn("user: "+this.state.user)
-    }
-    this.setState({tfUser: null, tfPassword: null, showLoginForm: false})
-  }
-
 
   openMenu(event) {
     console.info('openMenu called: ' + this.state.isMenuOpen)
@@ -89,66 +64,51 @@ export default class Navigation extends React.Component {
   }
 
   transformUser() {
+    console.warn(`user: ${this.state.user}`)
     if (this.state.user) {
-      console.warn("user: " + this.state.user)
-      this.setState({user: null})
-      window.location.reload()
+      sessionStorage.removeItem("user-tok");
+      console.info("logging out")
+      this.setState({"user":false,"currentPage":null});
+    } else {
+      console.info("logging in")
+      window.location.assign(AUTH_ENDPOINT)
     }
-    console.warn("user does not exist: " + this.state.user)
-    this.setState({showLoginForm: true})
+  }
+
+  fetchFromTestApi() {
+    const idToken = sessionStorage.getItem("user-tok")
+    if(idToken !== null) {
+      const headers = { 'authorization': `Bearer ${idToken}` }
+      fetch(API_TEST_ENDPOINT, {headers})
+        .then( result => result.json())
+        .then( data => this.setState({testApiFetch: data}))
+    }
   }
 
   renderPage() {
     switch (this.state.currentPage) {
       case "calendar" :
-        return (<Calendar/>)
+        return (this.state.user && <Calendar/>)
       case "user":
-        return (<UserForm/>)
+        return (this.state.user && <UserForm/>)
       case "info":
-        return (<Paper> Allgemeine Informationen </Paper>)
+        return (this.state.user && <Paper> Allgemeine Informationen </Paper>)
       default:
-        return (this.state.user == null && <Paper> Du bist nicht eingeloggt. </Paper>)
+
+        var userText;
+        if (this.state.user === false) {
+          userText = <Paper>
+            Du bist nicht eingeloggt.
+            <Button onClick={this.fetchFromTestApi}> Testbutton </Button>
+            <div>{this.state.testApiFetch}</div>
+          </Paper>
+        } else {
+          userText = <Paper>Hallo, {UserUtil.extractUser().email}
+            <Button onClick={this.fetchFromTestApi}> Testbutton </Button>
+            <div>{this.state.testApiFetch}</div></Paper>
+        }
+        return userText
     }
-  }
-
-  renderLoginForm() {
-    return (
-      <Dialog
-        fullScreen={true}
-        open={true}
-      >
-        <AppBar sx={{position: 'relative'}}>
-          <Toolbar>
-            <IconButton
-              edge="start"
-              color="inherit"
-              onClick={() => {
-                this.setState({showLoginForm: false})
-              }}
-              aria-label="close"
-            >
-              <CloseIcon/>
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-
-        <TextField name="tfUser"
-                   label="Nutzer"
-                   variant="outlined"
-                   sx={{margin: 2}}
-                   value={this.state.tfUser}
-                   onChange={(event) => this.handleTfUser(event)}>
-        </TextField>
-        <TextField name="tfPassword"
-                   label="Passwort"
-                   type="password"
-                   variant="outlined"
-                   sx={{margin: 2}}
-                   value={this.state.tfPassword}
-                   onChange={(event) => this.handleTfPassword(event)}>
-        </TextField>
-        <Button onClick={this.checkLogin}> Login </Button>
-      </Dialog>)
   }
 
   render() {
@@ -164,7 +124,7 @@ export default class Navigation extends React.Component {
                 aria-label="menu"
                 sx={{mr: 2}}
               >
-                {this.isAuthorized(this.state.user, Role.FRIEND) && <MenuIcon onClick={this.openMenu}/>}
+                {this.state.user && <MenuIcon onClick={this.openMenu}/>}
               </IconButton>
               <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
                 Lychenlaube
@@ -184,7 +144,6 @@ export default class Navigation extends React.Component {
           <MenuItem data-page="info" onClick={this.menuClick}>Information</MenuItem>
         </Menu>
         {this.renderPage()}
-        {this.state.showLoginForm && this.renderLoginForm()}
       </div>
     )
   }

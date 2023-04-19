@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import {Accordion, AccordionDetails, AccordionSummary, Alert, Container, Grid, List, ListItem, ListItemText, Stack} from "@mui/material";
+import {Accordion, AccordionDetails, AccordionSummary, Container, List, ListItem, ListItemText, Stack} from "@mui/material";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import {LoadingButton, StaticDatePicker} from "@mui/lab";
@@ -20,7 +20,8 @@ export default class Calendar extends React.Component {
     super(props);
     this.testAccount = "Simsa";
     this.state = {
-      bookingManager: new BookingManager([new Booking("Peter", new Date(2022, 1, 3), new Date(2022, 1, 6), "Peter", "lol"),
+      bookingManager: new BookingManager([
+        new Booking("Peter", new Date(2022, 1, 3), new Date(2022, 1, 6), "Peter", "lol"),
         new Booking("Udo", new Date(2022, 1, 17), new Date(2022, 1, 21), "Udo", "lol2")]),
       month2render: [0, 2, 4,6],
       calendarLoading: false

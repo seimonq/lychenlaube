@@ -1,16 +1,17 @@
 import Paper from "@mui/material/Paper";
 import {TabContext, TabList, TabPanel} from "@mui/lab";
 import Box from "@mui/material/Box";
-import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, List, ListItem, ListItemText, Stack, Tab, TextField} from "@mui/material";
+import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, List, ListItem, Stack, Tab, TextField} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import DatePicker from "@mui/lab/DatePicker";
 import CalendarUtil from "./CalendarUtil";
-import {addDays, isAfter, isSameDay} from "date-fns";
+import {addDays} from "date-fns";
 import Button from "@mui/material/Button";
 import * as React from "react";
 import Booking from "./Booking";
+import CalendarBackendUtil from "./CalendarBackendUtil";
 
 export default class BookingForm extends React.Component {
 
@@ -19,14 +20,14 @@ export default class BookingForm extends React.Component {
     this.state = {
       actionTab: "1",
       helperArrival: "",
-      bookingName: null,
+      bookingName: "",
       arrivalDay: null,
       departureDay: null,
-      comment: null,
+      comment: "",
       selectedDays: [],
       editMode: "list",
       deleteDialogOpen: false,
-      deleteItem: null
+      deleteItem: null,
     }
     this.onChangeActionTab = this.onChangeActionTab.bind(this);
     this.handleInputBookingName = this.handleInputBookingName.bind(this);
@@ -65,6 +66,10 @@ export default class BookingForm extends React.Component {
     this.props.bookingManager.addBooking(freshBooking)
     this.props.bookingManager.removeHiddenBookings()
     this.props.refreshParentState()
+
+    //send booking to backend
+    console.warn(`fresh booking: ${freshBooking}`)
+    CalendarBackendUtil.upsertBooking(freshBooking).then( function(value) { alert(JSON.stringify(value))});
 
     this.setState({
       arrivalDay: null, departureDay: null, bookingName: "", comment: "", editMode: "list"
@@ -183,7 +188,7 @@ export default class BookingForm extends React.Component {
       <Box>
         <Stack direction="row" spacing={3} sx={{marginTop: 1}}>
           <TextField id="outlined-basic"
-                     value={this.state.bookingName}
+                     value= {this.state.bookingName}
                      label="Buchungsname"
                      variant="outlined"
                      onChange={(event) => this.handleInputBookingName(event)}/>

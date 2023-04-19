@@ -3,13 +3,11 @@ import {isAfter,isBefore,isSameDay} from "date-fns";
 export default class Booking {
 
     constructor(account,begin,end,name,comment) {
-        this.id = Math.random().toString().substr(2, 8);
-        this.account = account
         this.begin = begin
         this.end = end
         this.name = name
         this.comment = comment
-        this.hidden = false
+        this.hidden = false //needed for editing a booking, that it verification does not interfere
     }
     containsDay(day) {
         return this.isInnerDay(day) || isSameDay(this.begin,day) || isSameDay(this.end,day)
