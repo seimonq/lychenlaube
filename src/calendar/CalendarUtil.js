@@ -6,6 +6,11 @@ export default class CalendarUtil {
 
   static renderDay(day, DayComponentProps, bookedDays, arrivalDay, departureDay) {
 
+    if((!Array.isArray(bookedDays) || bookedDays.length === 0)
+    && !arrivalDay === null && !departureDay === null ) {
+      return <PickersDay {...DayComponentProps} />
+    }
+
     let beginDayList = bookedDays.map(({begin}) => {
       return begin
     });
@@ -26,8 +31,8 @@ export default class CalendarUtil {
     //overlapping days
 
     if (beginDayList.find((item) => isSameDay(item, day)) &&
-      (departureDay != null && isSameDay(departureDay, day) ||
-        arrivalDay != null && isSameDay(arrivalDay, day))) {
+      ((departureDay != null && isSameDay(departureDay, day)) ||
+        (arrivalDay != null && isSameDay(arrivalDay, day)))) {
       return <PickersDay {...DayComponentProps} title={title} selected={true} disableMargin={true} className="selected_booked_cross"/>
     }
     if (endDayList.find((item) => isSameDay(item, day)) &&

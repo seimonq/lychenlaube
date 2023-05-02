@@ -10,8 +10,9 @@ import CalendarUtil from "./CalendarUtil";
 import {addDays} from "date-fns";
 import Button from "@mui/material/Button";
 import * as React from "react";
-import Booking from "./Booking";
-import CalendarBackendUtil from "./CalendarBackendUtil";
+import Booking from "../booking/Booking";
+import CalendarBackendUtil from "../booking/CalendarBackendUtil";
+import UserUtil from "../user/UserUtil";
 
 export default class BookingForm extends React.Component {
 
@@ -30,7 +31,6 @@ export default class BookingForm extends React.Component {
       deleteItem: null,
     }
     this.onChangeActionTab = this.onChangeActionTab.bind(this);
-    this.handleInputBookingName = this.handleInputBookingName.bind(this);
     this.handleInputComment = this.handleInputComment.bind(this);
     this.renderEditBooking = this.renderEditBooking.bind(this);
     this.editBooking = this.editBooking.bind(this);
@@ -42,34 +42,34 @@ export default class BookingForm extends React.Component {
   }
 
   onChangeActionTab(index) {
-    this.setState({actionTab: index, bookingName: null, arrivalDay: null, departureDay: null, comment: null, editMode: "list"});
+    this.setState({actionTab: index, bookingName: "", arrivalDay: null, departureDay: null, comment: "", editMode: "list"});
     console.warn("actionTab: " + index);
   }
 
   //the way to go when grabbing some value from another element
-  handleInputBookingName(event) {
-    console.warn("HANDLE BOOKING NAME")
-    this.setState({bookingName: event.target.value})
-  }
-
   handleInputComment(event) {
     this.setState({comment: event.target.value})
   }
 
-  sendSelection() {
-    if(this.state.arrivalDay == null || this.state.departureDay == null || this.state.bookingName == null) {
+  async sendSelection() {
+    if(this.state.arrivalDay == null || this.state.departureDay == null) {
       console.error("at least one field is null - no selection send!!!")
       return null
     }
     console.warn("SEND SELECTION")
-    let freshBooking = new Booking("testname", this.state.arrivalDay, this.state.departureDay, this.state.bookingName, this.state.comment)
-    this.props.bookingManager.addBooking(freshBooking)
-    this.props.bookingManager.removeHiddenBookings()
-    this.props.refreshParentState()
+
+    //for now we take user email as user name
+    let user = UserUtil.extractUser().email
+    //when in editMode, idHash is stored here and it will be an update instead of insert
+    let idHash = this.state.editMode !== "list" ? this.state.editMode : ""
+    let freshBooking = new Booking(idHash, this.state.arrivalDay, this.state.departureDay, user, this.state.comment)
 
     //send booking to backend
     console.warn(`fresh booking: ${freshBooking}`)
-    CalendarBackendUtil.upsertBooking(freshBooking).then( function(value) { alert(JSON.stringify(value))});
+    let bookings = await CalendarBackendUtil.upsertBooking(freshBooking);
+    //.then(
+    this.props.bookingManager.replaceAllBookings(bookings)
+    this.props.refreshParentState()
 
     this.setState({
       arrivalDay: null, departureDay: null, bookingName: "", comment: "", editMode: "list"
@@ -77,6 +77,23 @@ export default class BookingForm extends React.Component {
   }
 
   /** EDIT SECTION *******************************/
+
+  backToEditList(id) {
+    this.props.bookingManager.getBookingById(id).show()
+    this.setState({editMode: "list"})
+  }
+
+  editBooking(booking) {
+    console.warn("edit booking gets called with id:" + booking.idHash)
+    this.setState({editMode: booking.idHash, arrivalDay: booking.begin, departureDay: booking.end, bookingName: booking.name, comment: booking.comment});
+
+    //set booking as hidden, used in date selector to prevent that booking to edit is not blocked by existing booking
+    let selectedBooking = this.props.bookingManager.bookings.find((b) => b.idHash === booking.idHash);
+    selectedBooking.hide()
+    this.props.refreshParentState()
+
+  }
+
   renderEditBooking() {
     console.warn("edit mode: " + this.state.editMode)
     if (this.state.editMode === "list") {
@@ -94,27 +111,20 @@ export default class BookingForm extends React.Component {
       </Box>);
     }
 
-    let selectedBooking = this.props.bookingManager.bookings.find((b) => b.id === this.state.editMode);
-    selectedBooking.hide()
+    let selectedBooking = this.props.bookingManager.bookings.find((b) => b.idHash === this.state.editMode);
+
+    //safety net due to the async nature of sendSelection where editMode is reset to list .. that might happen after rendering this here
+    if(selectedBooking === null || selectedBooking === undefined)
+      return (<Box> Editing most likly done. Please refresh.</Box>)
+
     return (
       <Box>
-        {this.renderForm(selectedBooking.name, selectedBooking.begin, selectedBooking.end, selectedBooking.comment)}
+        {this.renderForm()}
         <Button variant="outlined"
                 sx={{fontSize: 20}}
-                onClick={() => this.backToEditList(selectedBooking.id)}>Cncl</Button>
+                onClick={() => this.backToEditList(selectedBooking.idHash)}>Cncl</Button>
       </Box>
     )
-  }
-
-  backToEditList(id) {
-    this.props.bookingManager.getBookingById(id).show()
-    this.setState({editMode: "list"})
-  }
-
-  editBooking(booking) {
-    console.warn("edit booking gets called with id:" + booking.id)
-    //this.props.bookedDays.rem
-    this.setState({editMode: booking.id, arrivalDay: booking.begin, departureDay: booking.end, bookingName: booking.name, comment: booking.comment});
   }
 
   /** DELETE SECTION *******************************/
@@ -126,8 +136,10 @@ export default class BookingForm extends React.Component {
     this.setState({deleteDialogOpen: false, deleteItem: null})
   }
 
-  deleteBooking(id) {
-    this.props.bookingManager.removeBookingById(id)
+  async deleteBooking(idHash) {
+    //this.props.bookingManager.removeBookingById(id)
+    let bookings = await CalendarBackendUtil.deleteBooking(idHash)
+    this.props.bookingManager.replaceAllBookings(bookings)
     this.handleDeleteClose()
     this.props.refreshParentState()
   }
@@ -151,13 +163,13 @@ export default class BookingForm extends React.Component {
 
   renderDeleteDialog() {
     let dialogText = ""
-    let itemId = ""
+    let idHash = ""
     if (this.state.deleteItem != null) {
       let item = this.state.deleteItem
       dialogText = (<Box>{item.name}'s Reise von
         &nbsp;{item.begin.getDate()}.{item.begin.getMonth() + 1}-
         {item.end.getDate()}.{item.end.getMonth() + 1} wirklich löschen?</Box>)
-      itemId = item.id
+      idHash = item.idHash
     }
     return (
       <Dialog
@@ -173,7 +185,7 @@ export default class BookingForm extends React.Component {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => this.deleteBooking(itemId)}>Ja.</Button>
+          <Button onClick={() => this.deleteBooking(idHash)}>Ja.</Button>
           <Button onClick={this.handleDeleteClose} autoFocus>
             Nein.
           </Button>
@@ -187,11 +199,11 @@ export default class BookingForm extends React.Component {
     return (
       <Box>
         <Stack direction="row" spacing={3} sx={{marginTop: 1}}>
-          <TextField id="outlined-basic"
+{/*          <TextField id="outlined-basic"
                      value= {this.state.bookingName}
                      label="Buchungsname"
                      variant="outlined"
-                     onChange={(event) => this.handleInputBookingName(event)}/>
+                     onChange={(event) => this.handleInputBookingName(event)}/>*/}
           <DatePicker label="Anreise"
                       renderInput={(params) => <TextField {...params} helperText={this.state.helperArrival}/>}
                       value={this.state.arrivalDay}

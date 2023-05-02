@@ -9,26 +9,19 @@ export default class BookingManager {
   }
 
   sortBookings() {
-    this.bookings.sort((a,b) => a.begin - b.begin)
+    if(this.bookings.length > 1) {
+      this.bookings.sort((a, b) => a.begin - b.begin)
+    }
   }
-  addBooking(booking) {
-    console.warn("booking: "+booking)
-    this.bookings.push(booking)
+  replaceAllBookings(bookings) {
+    this.bookings = bookings
     this.sortBookings()
-    console.warn("bookings: "+this.bookings.toString())
-  }
-  removeBookingById(id) {
-    this.bookings = this.bookings.filter(b => b.id !== id)
   }
   getBookingById(id) {
-    return this.bookings.find(b => b.id === id)
+    return this.bookings.find(b => b.idHash === id)
   }
   getVisibleBookings() {
     return this.bookings.filter(b => b.hidden !== true)
-  }
-  editBooking(booking) {
-    let i = this.bookings.findIndex(b => b.id === booking.id)
-    this.bookings[i] = booking
   }
   getMaxDepartureDate(arrivalDay) {
     let maxDate = this.getVisibleBookings()

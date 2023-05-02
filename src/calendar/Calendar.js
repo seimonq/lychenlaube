@@ -6,27 +6,37 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import {LoadingButton, StaticDatePicker} from "@mui/lab";
 import {de} from "date-fns/locale";
-import Booking from "./Booking.js";
+import Booking from "../booking/Booking.js";
 
 import CalendarUtil from "./CalendarUtil";
 import BookingForm from "./BookingForm";
-import BookingManager from "./BookingManager";
+import BookingManager from "../booking/BookingManager";
 import './Calendar.css';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CalendarBackendUtil from "../booking/CalendarBackendUtil";
 
 export default class Calendar extends React.Component {
 
   constructor(props) {
     super(props);
-    this.testAccount = "Simsa";
+
     this.state = {
-      bookingManager: new BookingManager([
-        new Booking("Peter", new Date(2022, 1, 3), new Date(2022, 1, 6), "Peter", "lol"),
-        new Booking("Udo", new Date(2022, 1, 17), new Date(2022, 1, 21), "Udo", "lol2")]),
+      bookingManager: new BookingManager([]),
       month2render: [0, 2, 4,6],
       calendarLoading: false
     };
     this.moveMonths = this.moveMonths.bind(this);
+  }
+
+  //react hook after component is included in DOM
+  componentDidMount() {
+    CalendarBackendUtil.getAllBookings()
+      .then((data) => {
+        data = data.map(booking => {
+          return new Booking(booking.idHash, new Date(booking.begin), new Date(booking.end), booking.name, booking.comment)
+        })
+        this.setState({bookingManager: new BookingManager(data)})
+      })
   }
 
   moveMonths(dist) {
@@ -116,7 +126,7 @@ export default class Calendar extends React.Component {
                 <h3>Buchungsliste</h3>
                 <br/>
                 <List>
-                  {this.state.bookingManager.bookings.map((item) =>
+                  {this.state.bookingManager.bookings.length > 0 && this.state.bookingManager.bookings.map((item) =>
                     <ListItem>
                       <ListItemText
                         primary={"Buchungsname: " + item.name + " | von: " + item.begin.toLocaleDateString("de-DE") + " bis " + item.end.toLocaleDateString("de-DE") + " | Kommentar: " + item.comment}
