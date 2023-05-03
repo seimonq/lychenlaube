@@ -24,3 +24,4 @@ yarn-error.log*
 /git_push.sh
 
 ./constants.js
+/.idea/
