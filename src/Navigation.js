@@ -103,7 +103,7 @@ export default class Navigation extends React.Component {
             <div>{this.state.testApiFetch}</div>
           </Paper>
         } else {
-          userText = <Paper>Hallo, {UserUtil.extractUser().email}
+          userText = <Paper>Hallo, {UserUtil.buildUser().name}
             <Button onClick={this.fetchFromTestApi}> Testbutton </Button>
             <div>{this.state.testApiFetch}</div></Paper>
         }

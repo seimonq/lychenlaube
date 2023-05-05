@@ -1,4 +1,5 @@
 import {isAfter, isSameDay} from "date-fns";
+import UserUtil from "../user/UserUtil";
 
 
 export default class BookingManager {
@@ -19,6 +20,9 @@ export default class BookingManager {
   }
   getBookingById(id) {
     return this.bookings.find(b => b.idHash === id)
+  }
+  getUserBookings() {
+    return this.bookings.filter(b => b.userId === UserUtil.buildUser().sub)
   }
   getVisibleBookings() {
     return this.bookings.filter(b => b.hidden !== true)

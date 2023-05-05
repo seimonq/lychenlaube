@@ -10,15 +10,9 @@ export default class CalendarBackendUtil {
     let data = await this._fetchBooker('delete', JSON.stringify(key))
     //refresh bookings
     if (data !== null) {
-      let bookings = await this.getAllBookings()
-      if (bookings !== null) {
-        bookings = bookings.map(booking => {
-          return new Booking(booking.idHash, new Date(booking.begin), new Date(booking.end), booking.name, booking.comment)
-        })
-        return bookings
-      }
+      return await this.getAllBookings()
     } else {
-      alert("data is null")
+      alert("data from delete is null")
       return []
     }
   }
@@ -28,15 +22,9 @@ export default class CalendarBackendUtil {
     let data = await this._fetchBooker('upsert', JSON.stringify(booking))
     //refresh bookings
     if (data !== null) {
-      let bookings = await this.getAllBookings()
-      if (bookings !== null) {
-        bookings = bookings.map(booking => {
-          return new Booking(booking.idHash, new Date(booking.begin), new Date(booking.end), booking.name, booking.comment)
-        })
-        return bookings
-      }
+      return await this.getAllBookings()
     } else {
-      alert("data is null")
+      alert("data from upsert is null")
       return []
     }
   }
@@ -45,11 +33,11 @@ export default class CalendarBackendUtil {
     let data = await this._fetchBooker('get_all',JSON.stringify(key))
     if(data !== null) {
       data = data.map(booking => {
-        return new Booking(booking.idHash, new Date(booking.begin), new Date(booking.end), booking.name, booking.comment)
+        return new Booking(booking.idHash, booking.userId, booking.userName, booking.userFamily, new Date(booking.begin), new Date(booking.end), booking.comment)
       })
       return data
     } else {
-      alert("data is null")
+      alert("data from get_all is null")
       return []
     }
   }

@@ -3,28 +3,19 @@ import jwtDecode from 'jwt-decode';
 
 export default class UserUtil {
 
+  static buildUser() {
 
-
-  static extractUser() {
-
-    var idToken = this._getToken()
-    if(idToken != null) {
-      var user = new User(idToken,this._extractEmail(idToken));
-      console.info(`user extracted: ${JSON.stringify(user,null,2)}`);
-      return user;
+    if (!this.isTokenStillValid()) {
+      alert("no valid user found, please login again")
+      window.location.reload()
     }
+    var idToken = this._getToken()
+    var user = this._extractUser(idToken)
+    console.info(`user extracted: ${JSON.stringify(user, null, 2)}`)
+    return user
   }
-  static _getToken() {
-    return sessionStorage.getItem("user-tok");
-  }
-  static _extractEmail(token) {
-    const tokenParts = token.split('.');
-    const tokenPayload = JSON.parse(atob(tokenParts[1]));
-    return tokenPayload.email;
-  }
-
   static isTokenStillValid() {
-    const token = sessionStorage.getItem("user-tok")
+    const token = this._getToken()
     if (token === null) {
       return false
     }
@@ -38,5 +29,12 @@ export default class UserUtil {
       return false
     }
   }
-
+  static _getToken() {
+    return sessionStorage.getItem("user-tok");
+  }
+  static _extractUser(token) {
+    const tokenParts = token.split('.');
+    const tokenPayload = JSON.parse(atob(tokenParts[1]));
+    return new User(tokenPayload.sub,tokenPayload.email,tokenPayload.name,tokenPayload.family_name)
+  }
 }

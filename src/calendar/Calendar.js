@@ -6,7 +6,6 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import {LoadingButton, StaticDatePicker} from "@mui/lab";
 import {de} from "date-fns/locale";
-import Booking from "../booking/Booking.js";
 
 import CalendarUtil from "./CalendarUtil";
 import BookingForm from "./BookingForm";
@@ -32,9 +31,9 @@ export default class Calendar extends React.Component {
   componentDidMount() {
     CalendarBackendUtil.getAllBookings()
       .then((data) => {
-        data = data.map(booking => {
-          return new Booking(booking.idHash, new Date(booking.begin), new Date(booking.end), booking.name, booking.comment)
-        })
+        // data = data.map(booking => {
+        //   return new Booking(booking.idHash, booking.sub, booking.name, booking.family, Date(booking.begin), new Date(booking.end), booking.comment)
+        // })
         this.setState({bookingManager: new BookingManager(data)})
       })
   }
@@ -129,7 +128,7 @@ export default class Calendar extends React.Component {
                   {this.state.bookingManager.bookings.length > 0 && this.state.bookingManager.bookings.map((item) =>
                     <ListItem>
                       <ListItemText
-                        primary={"Buchungsname: " + item.name + " | von: " + item.begin.toLocaleDateString("de-DE") + " bis " + item.end.toLocaleDateString("de-DE") + " | Kommentar: " + item.comment}
+                        primary={"Buchungsname: " + item.userName + " " + item.userFamily + " | von: " + item.begin.toLocaleDateString("de-DE") + " bis " + item.end.toLocaleDateString("de-DE") + " | Kommentar: " + item.comment}
                       />
                     </ListItem>
                   )}

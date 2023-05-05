@@ -21,7 +21,6 @@ export default class BookingForm extends React.Component {
     this.state = {
       actionTab: "1",
       helperArrival: "",
-      bookingName: "",
       arrivalDay: null,
       departureDay: null,
       comment: "",
@@ -42,7 +41,7 @@ export default class BookingForm extends React.Component {
   }
 
   onChangeActionTab(index) {
-    this.setState({actionTab: index, bookingName: "", arrivalDay: null, departureDay: null, comment: "", editMode: "list"});
+    this.setState({actionTab: index, arrivalDay: null, departureDay: null, comment: "", editMode: "list"});
     console.warn("actionTab: " + index);
   }
 
@@ -58,11 +57,10 @@ export default class BookingForm extends React.Component {
     }
     console.warn("SEND SELECTION")
 
-    //for now we take user email as user name
-    let user = UserUtil.extractUser().email
+    let user = UserUtil.buildUser()
     //when in editMode, idHash is stored here and it will be an update instead of insert
     let idHash = this.state.editMode !== "list" ? this.state.editMode : ""
-    let freshBooking = new Booking(idHash, this.state.arrivalDay, this.state.departureDay, user, this.state.comment)
+    let freshBooking = new Booking(idHash, user.sub, user.name, user.familyName, this.state.arrivalDay, this.state.departureDay, this.state.comment)
 
     //send booking to backend
     console.warn(`fresh booking: ${freshBooking}`)
@@ -72,7 +70,7 @@ export default class BookingForm extends React.Component {
     this.props.refreshParentState()
 
     this.setState({
-      arrivalDay: null, departureDay: null, bookingName: "", comment: "", editMode: "list"
+      arrivalDay: null, departureDay: null, comment: "", editMode: "list"
     })
   }
 
@@ -85,13 +83,12 @@ export default class BookingForm extends React.Component {
 
   editBooking(booking) {
     console.warn("edit booking gets called with id:" + booking.idHash)
-    this.setState({editMode: booking.idHash, arrivalDay: booking.begin, departureDay: booking.end, bookingName: booking.name, comment: booking.comment});
+    this.setState({editMode: booking.idHash, arrivalDay: booking.begin, departureDay: booking.end, comment: booking.comment});
 
     //set booking as hidden, used in date selector to prevent that booking to edit is not blocked by existing booking
     let selectedBooking = this.props.bookingManager.bookings.find((b) => b.idHash === booking.idHash);
     selectedBooking.hide()
     this.props.refreshParentState()
-
   }
 
   renderEditBooking() {
@@ -100,10 +97,10 @@ export default class BookingForm extends React.Component {
       return (<Box>
         Welche Reise willst du bearbeiten?
         <List>
-          {this.props.bookingManager.bookings.map((item) =>
+          {this.props.bookingManager.getUserBookings().map((item) =>
             <ListItem>
               <Button onClick={() => this.editBooking(item)}>
-                {item.name} [{item.begin.getDate()}.{item.begin.getMonth() + 1}-{item.end.getDate()}.{item.end.getMonth() + 1}]
+                {item.userName} [{item.begin.getDate()}.{item.begin.getMonth() + 1}-{item.end.getDate()}.{item.end.getMonth() + 1}]
               </Button>
             </ListItem>
           )}
@@ -148,10 +145,10 @@ export default class BookingForm extends React.Component {
     return (<Box>
         Welche Reise willst du bearbeiten?
         <List>
-          {this.props.bookingManager.bookings.map((item) =>
+          {this.props.bookingManager.getUserBookings().map((item) =>
             <ListItem>
               <Button onClick={() => this.handleDeleteOpen(item)}>
-                {item.name} [{item.begin.getDate()}.{item.begin.getMonth() + 1}-{item.end.getDate()}.{item.end.getMonth() + 1}]
+                {item.userName} [{item.begin.getDate()}.{item.begin.getMonth() + 1}-{item.end.getDate()}.{item.end.getMonth() + 1}]
               </Button>
             </ListItem>
           )}
@@ -166,7 +163,7 @@ export default class BookingForm extends React.Component {
     let idHash = ""
     if (this.state.deleteItem != null) {
       let item = this.state.deleteItem
-      dialogText = (<Box>{item.name}'s Reise von
+      dialogText = (<Box>{item.userName}'s Reise von
         &nbsp;{item.begin.getDate()}.{item.begin.getMonth() + 1}-
         {item.end.getDate()}.{item.end.getMonth() + 1} wirklich löschen?</Box>)
       idHash = item.idHash

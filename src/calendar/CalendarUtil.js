@@ -22,7 +22,7 @@ export default class CalendarUtil {
     let title = "";
     if(bookingsOfDay != null) {
       for(let b in bookingsOfDay)   {
-        title += bookingsOfDay[b].name + " hat gebucht vom "+
+        title += bookingsOfDay[b].userName + " hat gebucht vom "+
           bookingsOfDay[b].begin.getDate() +"."+bookingsOfDay[b].begin.getMonth()+
           " bis zum "+bookingsOfDay[b].end.getDate() +"."+bookingsOfDay[b].end.getMonth() +"    ";
       }

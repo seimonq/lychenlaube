@@ -2,11 +2,13 @@ import {isAfter,isBefore,isSameDay} from "date-fns";
 
 export default class Booking {
 
-    constructor(idHash,begin,end,name,comment) {
+    constructor(idHash, userId, userName, userFamily, begin, end, comment) {
         this.idHash = idHash
+        this.userId = userId
+        this.userName = userName
+        this.userFamily = userFamily
         this.begin = begin
         this.end = end
-        this.name = name
         this.comment = comment
         this.hidden = false //needed for editing a booking, that it verification does not interfere
     }
@@ -24,5 +26,5 @@ export default class Booking {
     }
 
     //maybe for testing here is a booking initialization
-    //new Booking("idHash",new Date(2023,3,1),new Date(2023,3,4),"simon","lalal")
+    //new Booking("idHash","x4w-wer","simon","kern",new Date(2023,3,1),new Date(2023,3,4),"lalal")
 }
